@@ -32,7 +32,9 @@ no se explicará durante el curso.
 La experiencia requerida en R es mínima, sin embargo, se espera que los participantes estén 
 familiarizados con el siguiente tipo de objetos básicos R: vectores, listas y dataframes. 
 https://rpubs.com/joser/objetos  
- 
+
+Puedes ver un tutorial del manejo básico de R acá: https://dlizcano.github.io/IntroR/
+
 Para el segundo día, un conocimiento básico sobre conceptos relacionados con sistemas de 
 coordenadas y proyecciones geográficas será ventajoso, aunque no esencial.  
 
