@@ -41,7 +41,7 @@ coordenadas y proyecciones geográficas será ventajoso, aunque no esencial.
 ## Instructores  
  
 Dr. Felipe Suárez-Castro. Universidad de Griffith, Australia – Sociedad Colombiana de Mastozoología  
-Dr. Diego Lizcano. Sociedad Colombiana de Mastozoología 
+Dr. [Diego J. Lizcano](http://dlizcano.github.io). Sociedad Colombiana de Mastozoología 
 Contacto: felipesuarezca@gmail.com  
 
 ## Créditos
