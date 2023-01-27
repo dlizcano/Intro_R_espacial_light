@@ -1,4 +1,4 @@
-# Curso R: Introducción al procesamiento, visualización y mapeo de datos espaciales
+# Curso R: Introducción al procesamiento, visualización y mapeo de datos biologicos
 
 ## Objetivo
 
