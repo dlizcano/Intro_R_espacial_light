@@ -1,0 +1,542 @@
+---
+title: "Dia 1"
+author: "Diego J. Lizcano, Jorge I. Velásquez-Tibata"
+date: "`r Sys.Date()`"
+html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    theme: united
+    highlight: tango
+    code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**Día 1**
+
+# Datos y organización general
+
+En primer lugar, es importante recordar que la organización es clave cuando se está generando un nuevo código. En este sentido, le recomendamos que cree una carpeta para cada nuevo proyecto. Puede hacer esto como un proyecto de Rstudio si lo desea (consulte Archivo> Nuevo proyecto) o simplemente como una carpeta. Dentro de esta carpeta, cree una carpeta de datos donde guardará sus datos sin procesar. Puede almacenar algunos objetos intermedios en otra subcarpeta. También cree una carpeta para su código R y una carpeta para guardar sus figuras.
+
+## Caso de estudio
+
+Durante el curso utilizaremos datos descargados de la plataforma GBIF, los cuales han sido filtrados y organizados por los instructores del curso. Las tablas contienen los registros de mamíferos de Colombia por especie y localidad obtenidos mediante el uso de cámaras trampa y especímenes de colección. Todos los registros duplicados han sido eliminados. Estos datos deben utilizarse únicamente durante el curso y no son confiables para el desarrollo de análisis más robustos.
+
+Primero, cargaremos los datos usando un la función `read_csv()` que se encuentra en un paquete incluido en tidyverse llamado `readr`. Aunque existen otras funciones como `read.csv()`, hemos decidido utilizar `read_csv()` ya que realiza comprobaciones adicionales sobre la estructura de los datos. Además, esta función imprime por defecto las columnas en forma de resumen. Veamos cómo:
+
+```{r, include=FALSE}
+library(tidyverse)
+```
+
+
+```{r, include=FALSE, echo=FALSE}
+dat<-read_csv("D:/BoxFiles/Box Sync/CodigoR/Intro_R_espacial_light/data/canidae_records.csv")
+```
+
+```{r include=TRUE, eval=FALSE}
+dat<-read_csv("canidae_records.csv") # ajuste la ruta al archivo si se requiere
+```
+
+Revise el entorno global *Global Environment*, en donde ahora debe aparecer un objeto en la memoria llamado "dat". Este objeto es la tabla que contiene registros de cánidos para Colombia.
+
+## Revisión inicial de los datos
+
+Una vez que la tabla esté cargada en el entorno global, es necesario hacer algunas verificaciones iniciales de los datos. Hay algunas funciones clave en R que nos permiten ver los datos de diferentes maneras. Es probable que estas funciones se conviertan en una rutina estándar en sus scripts, pues le ayudarán a determinar si sus datos están formateados correctamente.
+
+Primero, verificaremos el tipo de datos de cada una de las variables en nuestra tabla de datos. Tome un tiempo para entender cada una de estas variables.
+
+```{r}
+head(dat)
+tail(dat)
+#ver los datos de la tabla
+View(dat)
+names(dat)
+nrow(dat)
+ncol(dat)
+length(unique(dat$stateProvince))
+length(unique(dat$year))
+unique(dat$species)
+table(dat$species)
+summary(dat)
+```
+
+# Ordenamiento de datos
+
+Ordenar los datos significa manipularlos con el fin de facilitar su exploración y análisis. El paquete `"dplyr"`, incluido en `tidyverse`, proporciona una serie de funciones útiles en este sentido. El marco conceptual que sustenta `dplyr` se llama "Gramática de la manipulación de datos". A continuación revisaremos diferentes funciones para filtrar, resumir y combinar diferentes tablas.
+
+```{r}
+library(dplyr)
+```
+
+## Filtro de datos
+
+Empecemos por explorar los datos para una especie: *Cerdocyon thous*. Para ello, podemos utilizar la función `filter`.
+
+```{r}
+datthous <- filter(dat, species == "Cerdocyon thous")
+head(datthous)
+```
+
+También es posible que deseemos eliminar algunas columnas de nuestro conjunto de datos. Podemos hacer esto fácilmente con la función `select`. Por ejemplo, sabemos que todas las especies pertenecen a la clase Mammalia, por lo que eliminaremos esa columna.
+
+```{r}
+length(unique(datthous$class))
+```
+
+
+```{r}
+datsub <- select(dat, -class)
+head(datsub)
+```
+
+**Ejercicio**
+
+¿Cómo podría excluir múltiples columnas de su tabla de datos de manera eficiente? 
+
+## Conversión de tipo de datos
+
+También podemos cambiar los tipos de datos fácilmente usando un grupo de funciones que comienzan con "as". Por ejemplo, podríamos convertir la variable "taxonkey", la cual fue leída como númerica, en un factor. De esta manera, la variable ya no es reconocida como continua, sino como una variable categórica con múltiples niveles. 
+
+```{r}
+dat$taxonKey <- as.factor(dat$taxonKey)
+head(dat)
+levels(dat$taxonKey)
+```
+
+¡Pero hay que tener cuidado! Si cambia una variable de tipo factor a tipo numérico, obtendrá una secuencia de números que va desde 1 hasta el número de niveles de factor, incluso si los nombres de los factores son números diferentes.
+
+```{r}
+dat$taxonKey <- as.numeric(dat$taxonKey)
+unique(dat$taxonKey)
+```
+
+## Combinación de tablas
+
+Nuestra tabla de registros no tiene información específica sobre las localidades. Con el fin de incluir esta información, cargaremos una tabla de localidades que contiene información sobre la localidad de cada registro. 
+
+```{r eval=TRUE, echo=FALSE, include=FALSE}
+localidades<-read_csv("D:/BoxFiles/Box Sync/CodigoR/Intro_R_espacial_light/data/canidae_localidades.csv")
+```
+
+
+```{r eval=FALSE, include=TRUE}
+localidades<-read_csv("canidae_localidades.csv") #ajustar la ruta si lo requiere
+```
+
+`dplyr` proporciona un conjunto útil de funciones para unir tablas que tienen columnas en común. Escriba `?inner_join` en su consola y obtendrá una lista de todos los tipos de unión que admite `dplyr`.
+
+Hoy usaremos `inner_join` para unir los registros de cánidos con una tabla que cuenta con los datos de localidades. 
+
+inner_join mantendrá todas las filas de dat donde hay filas coincidentes en las rutas, por lo que si las filas no coinciden, se eliminarán (use `left_join` si desea mantener las filas en dat que no coinciden también). `inner_join` también duplicará filas si hay varias coincidencias, por lo que después de unir dos tablas, siempre verifique que la unión haya funcionado como se esperaba.
+
+**Pregunta**
+
+¿Cuál(es) columna(s) utilizaría para unir las dos tablas? 
+
+
+```{r, message=FALSE}
+# con inner_join no es necesario especificar la columna en común
+dat_loc <- inner_join(x = dat, y = localidades)
+# sin embargo, siempre es más seguro especificar las columnas
+dat_loc <- inner_join(x = dat, y = localidades, by = c("ID"))
+head(dat_loc)
+#número de filas antes del join
+nrow(dat)
+#número de fileas después del join
+nrow(dat_loc)
+```
+
+Pero un momento, ¿cómo es que el número de filas haya aumentado después de la unión?
+
+Las uniones son operaciones muy importantes para la organización de datos, ¡pero pueden ser muy peligrosas! Siempre debe elegir cuidadosamente su tipo de unión. Por ejemplo, `inner_join` vs `left_join` vs `full_join` darán el mismo resultado para algunos conjuntos de datos, pero no para otros.
+
+Incluso si cree que sabe lo que está haciendo, debe comprobar el resultado. Al realizar una unión, se pueden perder muestras que no coincidan o duplicar muestras que coincidan varias veces. Las pequeñas inconsistencias entre los dos conjuntos de datos que se van a unir pueden generar problemas.
+
+Así que revisemos un poco más los datos de las localidades:
+
+```{r}
+# cuántos registros únicos existen?
+length(unique(dat_loc$ID))
+```
+
+La disparidad entre el número de único de registros y el número de filas quiere decir que existen datos duplicados.
+
+```{r}
+### identifique los registros duplicados
+idup <- duplicated(dat_loc$ID)
+### extraiga la información de esos registros
+dup_locs <- dat_loc$ID[idup]
+### vea todas las filas que contienen estos registros duplicados
+filter(dat_loc, ID %in% dup_locs)
+```
+
+Afortunadamente, las localidades duplicadas tienen los mismos valores para todas las variables; si este no fuese el caso, tendríamos que volver al proveedor de datos y averiguar cuáles datos son los correctos. En nuestro caso, esto no es necesario y podemos eliminar los registros duplicados. 
+
+Para ello, podemos utilizar la función `duplicated()`, la cual selecciona distintas entradas:
+
+```{r}
+localidades2 <- distinct(localidades)
+nrow(localidades2)
+```
+
+Ahora puede realizar la unión de nuevo y confirme que los datos no tengan problemas.
+
+# Reorganización de datos con tidyr
+
+En nuestra tabla de localidades, podemos ver que las "variables" de la derecha son nombres de países diferentes. En cada una de estas columnas, 1 representa la presencia de la especie. Esta organización de la tabla significa que no se cumple uno de los principios de la estructura ordenada de datos ("Cada variable tiene su propia columna"). Por lo tanto, necesitamos rorganizar los datos para que sean más compatibles con la mayoría (aunque no todas) de las funciones de R.
+
+`tidyr `contiene una serie de funciones que ayudan a crear datos ordenados. Por ejemplo, la función `gather` toma datos de formato ancho y los convierte a formato largo.
+
+Para utilizar esta función, simplemente necesitamos especificar el nombre de la variable nueva que indica el país (country) y el nombre de las columnas de países.
+
+
+```{r}
+dat_input <- 
+  gather(data = dat_loc, 
+         key = country, value = count,  "Bolivia","Brazil", "Colombia","Ecuador",
+         "French.Guyana", "Guyana", "Panama", "Peru", "Suriname", "Venezuela", 
+         na.rm = TRUE)
+dat_input
+```
+
+Como puede ver, después de aplicar esta función, la tabla de datos resultante tiene el mismo número de filas que en la versión original de los datos, pero los nombres de los países ahora se almacenan como valores en la variable de "country".
+
+Esta nueva estructura de los datos nos permitirá  continuar con la verificación de errores y el análisis exploratorio de los datos.
+
+# Visualización de datos
+
+A menudo, es más fácil explorar datos mediante el uso de gráficos. R tiene buenos paquetes base para realizar gráficos, pero hoy usaremos el paquete `ggplot2`.
+
+```{r}
+library(ggplot2)
+```
+
+Primero, podemos generar un histograma para revisar la distribución de los registos por año. Por ahora no nos preocuparemos demasiado por la estética de la gráfica.
+
+```{r}
+ggplot(dat_input) + 
+  aes(x = year) + 
+  geom_histogram()
+```
+
+El componente `ggplot(dat_input)` determina la tabla de datos de la cual obtendremos las variables. Esta función también crea la página para el gráfico. El componente `aes()` hace referencia a la estética del gráfico, y aquí lo usamos para declarar que el eje x que corresponde a el año. Luego `geom_histogram()` declara el tipo de gráfico que se utilizará. En este caso se refiere al histograma.
+
+Inténtelo de nuevo, pero esta vez ejecute cada línea por separado, verá que la primera línea hace un diagrama vacío, la segunda línea agrega un eje x, la tercera línea agrega los datos.
+
+Aquí hay otro ejemplo:
+
+```{r}
+ggplot(dat) + 
+  aes(x = longitude, y = latitude) +
+  geom_point()
+```
+
+En este ejemplo, podemos ver que hay unos puntos que se comportan como *outliers*. 
+
+**Ejercicio** 
+
+Utilice las funciones aprendidas hasta ahora para eliminar o corregir estos datos.
+
+Una vez ha corregido estos datos, vamos a graficar de nuevo los puntos pero esta vez con los datos corregidos y coloreándolos de acuerdo a su país de origen. Para ello, incluya el argumento "color = country" dentro de `aes()`
+
+```{r,fig.show='hide',echo=T}
+ggplot(dat_input) + 
+  aes(x = longitude, y = latitude, color = country) +
+  geom_point()
+```
+
+# Agrupación y resumen de datos
+
+Para este ejercicio, vamos a utilizar un nuevo dataset que contiene los registros de mamíferos de Colombia en el SIB.
+
+
+```{r eval=TRUE, echo=FALSE, include=FALSE}
+dat_mamm<-read_csv("D:/BoxFiles/Box Sync/CodigoR/Intro_R_espacial_light/data/mamiferos_COL_GBIF.csv")
+```
+
+
+```{r eval=FALSE, include=TRUE}
+dat_mamm<-read.csv("mamiferos_COL_GBIF.csv")
+```
+
+**Ejercicio** 
+
+Utilice algunos de los conceptos aprendidos hasta ahora para explorar la información contenida en esta tabla. Revise si puede eliminar alguna columna o columnas duplicadas.
+
+Además, identifique el Número de filas, el Número de columnas y los tipos de datos.
+
+Ahora genere una gráfica de puntos en donde el eje *x* corresponde a la longitud, el eje *y* a la latitud y los puntos se encuentran coloreados por región. 
+
+```{r warning=FALSE, echo=T}
+ggplot(dat_mamm, 
+       aes(x = longitude, y = latitude, color = as.factor(region))) +
+    geom_point()
+```
+
+
+Presentar los datos en forma de gráficos es importante, pero ver los números concretos también puede ser útil. Supongamos que queremos identificar la elevación promedio y la desviación estandar a la que han sido recolectados los registros, así como el número de registros por departamento.
+
+Para hacer esto, vamos a agrupar los datos con la función `group_by` seguida de summarize para obtener las estadísticas en cada departamento.
+
+```{r}
+datg <- group_by(dat_mamm, NAME_1)
+```
+
+`group_by()` toma una tabla existente y la convierte en una tabla agrupada donde las operaciones se realizan "por grupo". Revise el objeto datg y verá que los datos en sí mismos no han cambiado. Sin embargo, si escribe datg en la consola, imprimirá, Groups: NAME_1 [31], lo que indica que los datos están agrupados en 31 departamentos.
+
+Ahora podemos utilizar esa tabla para resumir los datos con las estadísticas deseadas
+
+```{r}
+(dat_elev_sum <- 
+    summarize(datg,
+              mean_elev = mean(elevation),
+              sd_elev = sd(elevation),
+              n = n()))
+```
+
+Para ejecutar varios pasos como los anteriores, podemos usar la función `%>%`, la cual permite utilizar el resultado de una función como el primer argumento del siguiente. Por ejemplo, estas líneas de código hacen lo mismo:
+
+```{r, results='hide'}
+group_by(dat_mamm, NAME_1)
+#es lo mismo que
+dat_mamm %>% group_by(., NAME_1)
+```
+
+Las función `%>%` es útil para encadenar operaciones de varios pasos en tablas. Para la mayoría de las funciones compatibles con `%>%`, el. ni siquiera es necesario, lo que hace que nuestro código sea aún más fácil de leer.
+
+Aquí calculamos la desviación estándar y media de la elevación para cada departamento, así como el número de filas (registros) n () para cada departamento:
+
+```{r, warning=FALSE,}
+dat_elev_sum <- 
+  dat_mamm %>% 
+  group_by(NAME_1) %>%
+  summarize(mean_elev  = mean(elevation),
+            sd_elev = sd(elevation),
+            n = n())
+```
+
+Ahora vamos a graficar la media y la desviación estándar de la elevación por departamento
+
+```{r}
+dat_mamm %>% 
+  group_by(NAME_1) %>%
+  summarize(mean_elev  = mean(elevation),
+            sd_elev = sd(elevation),
+            n = n()) %>%
+  ungroup() %>%
+  ggplot(aes(x = NAME_1, y = mean_elev)) +
+  geom_linerange(aes(ymin = mean_elev - sd_elev, ymax = mean_elev + sd_elev)) +
+  geom_point()
+```
+
+**Ejercicio**
+
+Repita el gráfico anterior pero esta vez utilice únicamente los registros del orden Chiroptera para resumir los datos por región 
+
+
+```{r, echo=T,code_folding: show}
+  dat_mamm %>% 
+  filter(order == "Chiroptera")%>%
+  group_by(region) %>%
+  summarize(mean_elev  = mean(elevation, na.rm = T),
+            sd_elev = sd(elevation, na.rm = T),
+            n = n()) %>%
+  ungroup() %>%
+  ggplot(aes(x = region, y = mean_elev)) +
+  geom_linerange(aes(ymin = mean_elev - sd_elev, ymax = mean_elev + sd_elev)) +
+  geom_point()
+```
+
+# Creación de plots para publicaciones
+
+Supongamos que ahora queremos visualizar la distribución de registros a través del tiempo. Además, queremos ver la incidencia de diferentes técnicas de muestreo en el registro de especies. En primer lugar, necesitamos contar los registros por año. 
+
+**Ejercicio**
+
+Utilice las funciones `group_by`, `summarize` y `filter` para contar los registros de mamíferos por año desde 1950 por cada técnica de muestreo (basisOfRecord)
+
+
+```{r, warning=FALSE,echo=T}
+dat_per_year<-dat_mamm %>% 
+                group_by(year,basisOfRecord) %>%
+                summarize(n = n()) %>%
+                filter(year > 1949)
+```
+
+Ahora podemos graficar los datos agrupando por técnica de muestro
+
+```{r, results='show'}
+  
+p1<-ggplot(dat_per_year, aes(x=year, y=n,color = basisOfRecord)) +
+    geom_line(size = 1) 
+p1
+```
+
+Añadir una línea en que muestre el año con más registros
+
+```{r}
+  
+p2<-p1 +
+  geom_vline(xintercept = 2015,colour="black", linetype = "longdash") 
+p2
+```
+
+La función `anotate()` nos permite añadir texto en ubicaciones específicas de nuestro gráfico
+
+```{r, results="show"}
+  
+p3<-p2 +
+  annotate("text", label = "2015", x = 2016, y = 300, size = 4, colour = "black")
+p3
+```
+
+Finalmente, podemos cambiar el tamaño del texto de los ejes
+
+```{r, results='show'}
+  
+e1<-p3 +
+  theme_bw()+
+  theme(legend.position = "bottom",
+        legend.title = element_blank(),
+        legend.text = element_text(size = 14),
+        text = element_text(size = 14),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12))+
+    ylab("# registros")+
+  ggtitle("Número de registros de mamíferos")
+e1
+```
+
+**Ejercicio**
+
+Utilice las funciones `group_by`, `summarize` para contar los registros de los órdenes "Chiroptera","Primates","Rodentia","Carnivora" y "Perissodactyla" por cada técnica de muestreo (basisOfRecord)y por año desde 1950 
+
+Para resolver este ejercicio, es importante conocer el siguiente operador:
+
+`%in%`
+
+Este operador significa "dentro de" y le permite seleccionar seleccioniar todos los registros que se encuentran dentro de un conjunto de datos específico.
+
+Por ejemplo, si desea seleccionar todos los registros que fueron recolectados en 1960,1990, 2000 y 2010, puede utilizar el operador `%in%` de la siguiente manera:
+
+```{r, results='hide', warning=FALSE}
+dat_mamm %>%
+  filter(year %in% c(1960,1990,2000,2010))
+                
+```
+
+Guarde el resultado como un objeto, por ejemplo "dat_year_ford"
+
+
+```{r warning=FALSE}
+dat_year_ford<-dat_mamm %>% 
+                group_by(year,basisOfRecord,order) %>%
+                summarize(n = n()) %>%
+                filter(year > 1949 & order %in% c("Chiroptera","Primates",
+                                                  "Rodentia","Carnivora",
+                                                  "Perissodactyla"))
+```
+
+Ahora podemos crear un gráfico de barras que muestre la proporción de registros por órden y año. Para ello, utilizaremos el argumento, position = fill
+
+```{r warning=FALSE, results="show"}
+p1<-ggplot(dat_year_ford, aes(fill=order, y=n, x=year)) + 
+    geom_bar(position="fill", stat="identity") 
+p1
+```
+
+En este punto podemos arreglar un poco la estética de nuestra figura
+
+Para ello, podemos utilizar diferentes paletas disponibles en la función `scale_fill_brewer()`. Puede ver las paletas disponibles acá:
+
+http://rstudio-pubs-static.s3.amazonaws.com/5312_98fc1aba2d5740dd849a5ab797cc2c8d.html
+
+En este ejemplo, utilizaremos la paleta "Set2"
+
+```{r warning=FALSE,results="show"}
+p1 +scale_fill_brewer(palette = "Set2")
+```
+   
+Pero si no estamos convencidos que estos son los mejores colores para nuestra figura, podemos utilizar la función `scale_fill_manual()` y crear un vector con los colores que queremos. Un buen recurso para definir colores es https://colorbrewer2.org/#type=sequential&scheme=BuGn&n=3
+
+```{r warning=FALSE,results="show"}
+p2<-p1 +scale_fill_manual(values
+                          =c('#d7191c','#fdae61','#ffffbf',
+                             '#abd9e9','#2c7bb6'))
+p2
+```
+
+Ahora podemos ajustar otros aspectos de nuestro gráfico tales como el título, el fondo y las etiquetas de los ejes. Note como podemos cambiar la posición de la leyenda.
+
+
+```{r warning=FALSE,results="show"}
+p3<-p2 +
+ggtitle("Proporción de registros para cinco órdenes de mamíferos desde 1950")+ 
+    xlab("Año")+
+    ylab("# de registros")+
+    theme(legend.position="bottom",legend.box = "horizontal")
+p3
+```  
+   
+Podemos añadir más elementos para personalizar nuestro gráfico
+
+
+```{r warning=FALSE,results="show"}
+p4<-p3+
+  labs(tag = "a")+#añade una letra para identificar el gráfico
+  theme(panel.border = element_blank(),#no bordes
+        panel.background = element_blank(),#fondo blanco
+        #formato del título
+        plot.title = element_text(size = 14, 
+                                  family = "Tahoma", 
+                                  face = "bold",
+                                  hjust = 0.5),
+        text=element_text(family = "Tahoma"),#Fuente de las etiquetas
+        axis.title = element_text(face="bold"),#Negrilla en los ejes
+        axis.text.x = element_text(colour="black", size = 11),
+        axis.text.y = element_text(colour="black", size = 9),
+        axis.line = element_line(size=0.5, colour = "black"),
+        plot.tag.position = "topleft"
+        )
+p4
+```  
+
+En dado caso de que desee cambiar la secuencia de números en el eje x, podemos utilizar la función scale_x_continuous(). En este caso, el argumento breaks usa la función seq(), la cual genera una secuencia de números entre un intervalo definido. En este sentido, la siguiente secuencia:
+
+```{r warning=FALSE}
+seq(0,175,25)
+    
+``` 
+
+se puede leer como "crear una secuencia de números entre 0 y 175, cada 25 números.
+
+Aplicando este principio, podemos cambiar las divisiones en el eje x de la siguiente manera:
+
+```{r warning=FALSE}
+p5<-p4+
+    scale_x_continuous(name = "Año",
+                     breaks = seq(1950, 2020, 5),
+                     limits=c(1950, 2020))
+p5
+```  
+
+Finalmente, podemos combinar los dos plots. Para ello, utilizaremos el paquete `gridExtra`
+
+```{r, message=FALSE, warning=FALSE}
+library(gridExtra)
+fp<-grid.arrange(e1, p5, nrow = 2, ncol = 1,
+             layout_matrix = rbind(c(1,1),c(2,2)))
+fp
+``` 
+
+**Ejercicio**
+
+¿Cuáles cambios haría para hacer las gráficas estéticamente más agradables? 
+¿Cómo combinaría tres gráficos dentro de una misma figura? 
+
+
+¡Hemos llegado al final del día 1! Los conceptos aprendidos el día de hoy serán fundamentales para sacar el mayor provecho en el segundo día. Es hora de descansar :)
+ 

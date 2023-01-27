@@ -1,0 +1,23 @@
+---
+title: "Sobre este curso"
+description: |
+  Instructores y creditos de este curso.
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Instructores
+
+[Jorge Iván Velásquez-Tibata, Ph.D.](https://www.audubon.org/content/jorge-velasquez) Science Director for Audubon Americas. National Audubon Society.
+
+[Diego J. Lizcano, Ph.D.](http://dlizcano.github.io/) Sociedad Colombiana de Mastozoología (SCMas)
+
+## Créditos
+
+Este curso es una version ligera del fantastico curso [Introducción al procesamiento, visualización y mapeo de datos espaciales en R](https://afsuarezca.github.io/Intro_R_espacial/index.html) preparado por el Dr. Felipe Suárez-Castro.
+
+Algunos ejercicios presentados en este curso fueron adaptados del curso desarrollado por C.J. Brown, D. Schoeman, A.J. Richardson y B. Venables, el cual se encuentra disponible en:
+
+https://www.seascapemodels.org/code.html

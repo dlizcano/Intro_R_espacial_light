@@ -1,0 +1,16 @@
+name: "Intro_R_espacial_light"
+title: "Intro_R_espacial_light"
+description: |
+  Intro_R_espacial_light
+output_dir: "docs"
+navbar:
+  right:
+    - text: "Home"
+      href: index.html
+    - text: "Dia 1"
+      href: dia1.html
+    - text: "Dia 2"
+      href: dia2.html
+    - text: "About"
+      href: about.html
+output: distill::distill_article
