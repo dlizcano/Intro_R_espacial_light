@@ -49,3 +49,7 @@ Contacto: felipesuarezca@gmail.com
 Algunos ejercicios presentados en este curso están adaptados del excelente curso desarrollado por C.J. Brown, D. Schoeman, A.J. Richardson y B. Venables, el cual se encuentra disponible en:
 
 https://www.seascapemodels.org/code.html
+
+
+
+update note: copy the content of  D:\BoxFiles\Box Sync\CodigoR\Intro_R_espacial_light to  D:\BoxFiles\Box Sync\CodigoR\tigrinus\Intro_R_espacial_light
